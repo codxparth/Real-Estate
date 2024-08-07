@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const User = require('../model/user');
 const bcryptjs = require('bcryptjs');
-
+const jwt = require('jsonwebtoken');
 exports.signup = async (req, res) => {
     try {
         const { username, email, password } = req.body;
@@ -42,3 +42,49 @@ exports.signup = async (req, res) => {
         });
     }
 };
+
+
+
+exports.signin =  async (req,res)=>{
+    try{
+        const {email, password } = req.body;
+
+        const validuser = await User.findOne({email})
+        if(!validuser){
+            return res.status(500).json({
+                message:"could not find this id ",
+                sucess:false,
+                message:error.message
+            })
+        }
+
+        const validpassword  = bcryptjs.compareSync(password ,  validuser.password)
+
+        if(!validpassword){
+            return res.status(500).json({
+                message:"invalid password",
+                message:error.message,
+                sucess:false ,
+
+            })
+        }
+
+        const token = jwt.sign({id:validuser._id}, process.env.JWT_SECRET)
+
+        console.log(token)
+
+        res.status(200).json({
+            message:"user login suceesfully",
+            sucess:true,
+            
+        })
+
+    }
+    catch(error){
+        console.error('Server Error:', error);
+        res.status(500).json({
+            success: false,
+            message: "something went wrong"
+        });
+    }
+}
