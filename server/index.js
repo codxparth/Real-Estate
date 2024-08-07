@@ -13,12 +13,13 @@ app.use(express.json())
 database.connect()
 
 
-app.use('/api/v1/user' , userRoutes)
-app.use('/api/v1/auth', authRoutes)
+app.use('/api/user' , userRoutes)
+app.use('/api/auth', authRoutes)
 
-app.listen(3000 , () =>{
-    console.log("server is running on port no 3000")
-})
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 
 
 
