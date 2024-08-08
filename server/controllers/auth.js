@@ -70,12 +70,14 @@ exports.signin =  async (req,res)=>{
         }
 
         const token = jwt.sign({id:validuser._id}, process.env.JWT_SECRET)
-
+        console.log(validuser)
         console.log(token)
 
         res.status(200).json({
             message:"user login suceesfully",
             sucess:true,
+            validuser,
+            token
             
         })
 
