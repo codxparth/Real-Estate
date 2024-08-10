@@ -51,8 +51,9 @@ exports.signin =  async (req,res)=>{
 
         const validuser = await User.findOne({email})
         if(!validuser){
-            
+            // console.log(error)
             return res.status(500).json({
+                
                 message:"could not find this id ",
                 sucess:false,
                 message:error.message
@@ -81,6 +82,42 @@ exports.signin =  async (req,res)=>{
             token
             
         })
+
+    }
+    catch(error){
+        console.error('Server Error:', error);
+        res.status(500).json({
+            success: false,
+            message: "something went wrong"
+        });
+    }
+}
+
+
+
+exports.google = async (req,res) =>{
+    try{
+        const user = await User.findOne({email : req.body.email})
+
+        // agar email mil gaya 
+        if(user){
+            const token = jwt.sign({id:user._id}, process.env.JWT_SECRET)
+            console.log(token)
+
+           return res.cookie("access token" , token, {httpsOnly :true}).status(200).json({success:true})
+        }
+
+        else{
+            const generatedPassword =  Math.random().toString(36).slice(-8) +  Math.random().toString(36).slice(-8)  
+            const hashedPassword = bcryptjs.hashSync(generatedPassword , 10)
+            const newUser = new User({username:req.body.name.split(" ").join("").toLowerCase() +  Math.random().toString(36).slice(-4),   email:req.body.email, password:hashedPassword , avatar:req.body.photo})
+            await newUser.save()
+            const token = jwt.sign({id: newUser._id} , process.env.JWT_SECRET)
+
+            return res.cookie("access token" , token, {httpsOnly :true}).status(200).json({success:true})
+            console.log(newUser)
+
+        }
 
     }
     catch(error){

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { signInStart, signInSuccess, signInFailure } from '../redux/user/userSlice.js';
+import OAuth from '../components/OAuth.jsx';
 
 export default function SignIn() {
   const [formData, setFormData] = useState({});
@@ -61,13 +62,14 @@ export default function SignIn() {
         />
         <button
           disabled={loading}
-          className="bg-slate-700 text-white hover:opacity-70 duration-300 rounded-lg p-3"
+          className="bg-slate-700 text-white hover:opacity-70 duration-300 hover:text-black rounded-lg p-3"
         >
           {loading ? 'loading...' : 'Signin'}
         </button>
-        <button className="bg-red-700 text-white rounded-lg hover:opacity-70 duration-300 p-3">
+        {/* <button className="bg-red-700 text-white rounded-lg hover:opacity-70 duration-300 p-3">
           Continue with Google
-        </button>
+        </button> */}
+        <OAuth/>
         <div className="flex flex-row gap-x-2">
           <h3>Don't have an account?</h3>
           <Link to="/sign-up">
