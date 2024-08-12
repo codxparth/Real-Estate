@@ -44,54 +44,43 @@ exports.signup = async (req, res) => {
 };
 
 
+exports.signin = async (req, res) => {
+    try {
+        const { email, password } = req.body;
 
-exports.signin =  async (req,res)=>{
-    try{
-        const {email, password } = req.body;
-
-        const validuser = await User.findOne({email})
-        if(!validuser){
-            // console.log(error)
-            return res.status(500).json({
-                
-                message:"could not find this id ",
-                sucess:false,
-                message:error.message
-            })
+        const validuser = await User.findOne({ email });
+        if (!validuser) {
+            return res.status(404).json({
+                // message: "User not found",
+                success: false,
+            });
         }
 
-        const validpassword  = bcryptjs.compareSync(password ,  validuser.password)
-
-        if(!validpassword){
-            return res.status(500).json({
-                message:"invalid password",
-                message:error.message,
-                sucess:false ,
-
-            })
+        const validpassword = bcryptjs.compareSync(password, validuser.password);
+        if (!validpassword) {
+            return res.status(401).json({
+                message: "Invalid password",
+                success: false,
+            });
         }
 
-        const token = jwt.sign({id:validuser._id}, process.env.JWT_SECRET)
-        console.log(validuser)
-        console.log(token)
-
+        const token = jwt.sign({ id: validuser._id }, process.env.JWT_SECRET);
         res.status(200).json({
-            message:"user login suceesfully",
-            sucess:true,
+            message: "User logged in successfully",
+            success: true,
             validuser,
             token
-            
-        })
-
-    }
-    catch(error){
+        });
+    } catch (error) {
         console.error('Server Error:', error);
         res.status(500).json({
             success: false,
-            message: "something went wrong"
+            message: "Server error occurred",
+            error: error.message, // Include error message for easier debugging
         });
     }
-}
+};
+
 
 
 
