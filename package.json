@@ -4,7 +4,6 @@
   "description": "",
   "main": "index.js",
   "proxy": "http://localhost:3000",
-
   "scripts": {
     "dev": "nodemon server/index.js",
     "start": "node server/index.js"

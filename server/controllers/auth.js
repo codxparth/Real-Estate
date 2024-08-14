@@ -2,84 +2,37 @@ const mongoose = require('mongoose');
 const User = require('../model/user');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-exports.signup = async (req, res) => {
+
+exports.signup = async (req, res, next) => {
+    const { username, email, password } = req.body;
+    const hashedPassword = bcryptjs.hashSync(password, 10);
+    const newUser = new User({ username, email, password: hashedPassword });
     try {
-        const { username, email, password } = req.body;
-
-        // Validate required fields
-        if (!username || !email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: "Please provide all required details",
-            });
-        }
-
-        // Check if the user already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(409).json({
-                success: false,
-                message: "User already exists",
-            });
-        }
-
-        const hashedPassword = bcryptjs.hashSync(password, 10);
-
-        // Create user
-        const newUser = await User.create({ username, email, password: hashedPassword });
-
-        // Send success response
-        res.status(201).json({
-            success: true,
-            message: "User created successfully",
-            data: newUser
-        });
+      await newUser.save();
+      res.status(201).json('User created successfully!');
     } catch (error) {
-        console.error('Server Error:', error);
-        res.status(500).json({
-            success: false,
-            message: "Internal Server Error"
-        });
+      next(error);
     }
-};
+  };
 
 
-exports.signin = async (req, res) => {
+  exports.signin = async (req, res, next) => {
+    const { email, password } = req.body;
     try {
-        const { email, password } = req.body;
-
-        const validuser = await User.findOne({ email });
-        if (!validuser) {
-            return res.status(404).json({
-                // message: "User not found",
-                success: false,
-            });
-        }
-
-        const validpassword = bcryptjs.compareSync(password, validuser.password);
-        if (!validpassword) {
-            return res.status(401).json({
-                message: "Invalid password",
-                success: false,
-            });
-        }
-
-        const token = jwt.sign({ id: validuser._id }, process.env.JWT_SECRET);
-        res.status(200).json({
-            message: "User logged in successfully",
-            success: true,
-            validuser,
-            token
-        });
+      const validUser = await User.findOne({ email });
+      if (!validUser) return next(errorHandler(404, 'User not found!'));
+      const validPassword = bcryptjs.compareSync(password, validUser.password);
+      if (!validPassword) return next(errorHandler(401, 'Wrong credentials!'));
+      const token = jwt.sign({ id: validUser._id }, process.env.JWT_SECRET);
+      const { password: pass, ...rest } = validUser._doc;
+      res
+        .cookie('access_token', token, { httpOnly: true })
+        .status(200)
+        .json(rest);
     } catch (error) {
-        console.error('Server Error:', error);
-        res.status(500).json({
-            success: false,
-            message: "Server error occurred",
-            error: error.message, // Include error message for easier debugging
-        });
+      next(error);
     }
-};
+  };
 
 
 
