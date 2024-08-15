@@ -46,6 +46,10 @@ export default function Profile() {
     }
   }, [file])
 
+  const handleChange = (e) =>{
+    setformdata({...formdata , [e.target.id] : e.target.value})
+  }
+
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center mt-9">Profile</h1>
@@ -83,12 +87,16 @@ export default function Profile() {
         <input 
           type='text' 
           placeholder='username' 
+          defaultValue={currentUser.username}
+          onChange={handleChange}
           id='username' 
           className='border p-3 rounded-lg' 
         />
         <input 
           type='email' 
           placeholder='email' 
+          defaultValue={currentUser.email}
+          onChange={handleChange}
           id='email' 
           className='border p-3 rounded-lg' 
         />
