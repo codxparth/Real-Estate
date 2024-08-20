@@ -32,10 +32,13 @@ export default function SignIn() {
         body: JSON.stringify(formData),
       });
       const data = await res.json();
-      console.log(data);
-      if (data.success === false) {
-        dispatch(signInFailure(data.message));
+      console.log(data); // Check the structure of data
+      if (!data || data.success === false) {
+        dispatch(signInFailure(data.message || 'Sign-in failed'));
         return;
+      }
+      if (!data.username) {
+        throw new Error('Username is missing in the response');
       }
       dispatch(signInSuccess(data));
       navigate('/');
@@ -43,6 +46,7 @@ export default function SignIn() {
       dispatch(signInFailure(error.message));
     }
   };
+  
   return (
     <div className='p-3 max-w-lg mx-auto'>
       <h1 className='text-3xl text-center font-semibold my-7'>Sign In</h1>

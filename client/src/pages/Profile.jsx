@@ -1,58 +1,71 @@
-import React, { useRef, useState, useEffect } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
-import { app } from './../firebase'
-import { updateUserStart, updateUserSuccess, updateUserFailure } from '../redux/user/userSlice'
+import React, { useRef, useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { app } from './../firebase';
+import { updateUserStart, updateUserSuccess, updateUserFailure, deleteUserStart, deleteUserSuccess, deleteUserFailure } from '../redux/user/userSlice';
+import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
-  const fileRef = useRef(null)
-  const { currentUser , loading , error } = useSelector((state) => state.user)
-  const [file, setFile] = useState(undefined)
-  const [filePerc, setFilePerc] = useState(0)
-  const [fileUploadError, setFileUploadError] = useState(false)
-  const [formdata, setFormdata] = useState({ username: currentUser.username, email: currentUser.email })
-  const [updatesucess , setupdatesucess] = useState(false)
-  const dispatch = useDispatch()
+  const fileRef = useRef(null);
+  const { currentUser, loading, error } = useSelector((state) => state.user);
+  const [file, setFile] = useState(undefined);
+  const [filePerc, setFilePerc] = useState(0);
+  const [fileUploadError, setFileUploadError] = useState(false);
+  const [formdata, setFormdata] = useState({ username: '', email: '' });
+  const [updatesuccess, setupdatesuccess] = useState(false);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (currentUser) {
+      setFormdata({
+        username: currentUser.username,
+        email: currentUser.email,
+      });
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     if (file) {
-      const storage = getStorage(app)
-      const filename = new Date().getTime() + file.name
-      const storageRef = ref(storage, filename)
+      const storage = getStorage(app);
+      const filename = new Date().getTime() + file.name;
+      const storageRef = ref(storage, filename);
 
-      const uploadTask = uploadBytesResumable(storageRef, file)
+      const uploadTask = uploadBytesResumable(storageRef, file);
 
       uploadTask.on(
         'state_changed',
         (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-          setFilePerc(Math.round(progress))
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setFilePerc(Math.round(progress));
         },
         (error) => {
-          console.error('Upload failed:', error)
-          setFileUploadError(true)
+          console.error('Upload failed:', error);
+          setFileUploadError(true);
         },
         () => {
           getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-            setFormdata((prev) => ({ ...prev, avatar: downloadURL }))
-            console.log('Upload complete!')
-          })
+            setFormdata((prev) => ({ ...prev, avatar: downloadURL }));
+            console.log('Upload complete!');
+          });
         }
-      )
+      );
     }
-  }, [file])
+  }, [file]);
 
   const handleChange = (e) => {
-    setFormdata({ ...formdata, [e.target.id]: e.target.value })
-  }
+    setFormdata({ ...formdata, [e.target.id]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    dispatch(updateUserStart())
-  
+    e.preventDefault();
+    if (!currentUser) return; // Guard clause
+
+    dispatch(updateUserStart());
+
     try {
       const token = currentUser.token; // Assuming token is stored in currentUser
-  
+
       const res = await fetch(`/api/user/update/${currentUser._id}`, {
         method: 'POST',
         headers: {
@@ -60,22 +73,46 @@ export default function Profile() {
           'Authorization': `Bearer ${token}`, // Include the token in the Authorization header
         },
         body: JSON.stringify(formdata),
-      })
-  
-      const data = await res.json()
-  
+      });
+
+      const data = await res.json();
+
       if (data.success === false) {
-        dispatch(updateUserFailure(data.message))
-        return
+        dispatch(updateUserFailure(data.message));
+        return;
       }
-  
-      dispatch(updateUserSuccess(data))
-      setupdatesucess(true)
+
+      dispatch(updateUserSuccess(data));
+      setupdatesuccess(true);
     } catch (error) {
-      dispatch(updateUserFailure(error.message))
+      dispatch(updateUserFailure(error.message));
     }
+  };
+
+  const handleDelete = async () => {
+    try {
+      dispatch(deleteUserStart());
+      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
+
+      if (data.success === false) {
+        dispatch(deleteUserFailure(data.message));
+        return;
+      }
+
+      dispatch(deleteUserSuccess(data));
+      navigate('/sign-in');
+    } catch (error) {
+      dispatch(deleteUserFailure(error.message));
+    }
+  };
+
+  if (!currentUser) {
+    return <p>Loading...</p>; // or redirect to login page
   }
-  
 
   return (
     <div className="p-3 max-w-lg mx-auto">
@@ -110,7 +147,7 @@ export default function Profile() {
         <input
           type="text"
           placeholder="Username"
-          defaultValue={currentUser.username}
+          value={formdata.username}
           onChange={handleChange}
           id="username"
           className="border p-3 rounded-lg"
@@ -118,7 +155,7 @@ export default function Profile() {
         <input
           type="email"
           placeholder="Email"
-          defaultValue={currentUser.email}
+          value={formdata.email}
           onChange={handleChange}
           id="email"
           className="border p-3 rounded-lg"
@@ -134,18 +171,18 @@ export default function Profile() {
           disabled={loading}
           type="submit"
           className="bg-slate-700 text-white rounded-lg p-3 hover:opacity-95 disabled:opacity-80"
-          // disabled={filePerc > 0 && filePerc < 100}
         >
-          {loading ?  'Loading...' : 'update'}
+          {loading ? 'Loading...' : 'Update'}
         </button>
       </form>
       <div className="flex justify-between mt-5">
-        <span className="text-red-700 cursor-pointer">Delete account</span>
-        <span className="text-red-700 cursor-pointer">Signout</span>
+        <span onClick={handleDelete} className="text-red-700 cursor-pointer">
+          Delete account
+        </span>
+        <span className="text-red-700 cursor-pointer">Sign out</span>
       </div>
-      <p className="text-red-700 mt-5">{error ?  error : ' '}</p>
-      <p className="text-green-700 mt-5">{updatesucess ? 'User is updated sucessfully'  : ''}</p>
+      {error && <p className="text-red-700 mt-5">{error}</p>}
+      {updatesuccess && <p className="text-green-700 mt-5">User updated successfully</p>}
     </div>
-
-  )
+  );
 }
