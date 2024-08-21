@@ -37,7 +37,7 @@ exports.signup = async (req, res, next) => {
 
 
 
-exports.google = async (req,res) =>{
+exports.google = async (req,res,next) =>{
     try{
         const user = await User.findOne({email : req.body.email})
 
@@ -69,4 +69,18 @@ exports.google = async (req,res) =>{
             message: "something went wrong"
         });
     }
+}
+
+
+exports.signout = async (req,res,next) =>{
+  try{
+    res.clearCookie("access_token");
+    res.status(200).json({
+      sucess:true,
+      message:"user has been log-out"
+    })
+  }
+  catch(error){
+    next(error);
+  }
 }

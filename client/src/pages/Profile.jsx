@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { app } from './../firebase';
-import { updateUserStart, updateUserSuccess, updateUserFailure, deleteUserStart, deleteUserSuccess, deleteUserFailure } from '../redux/user/userSlice';
+import { updateUserStart, updateUserSuccess, updateUserFailure, deleteUserStart, deleteUserSuccess, deleteUserFailure , signOutUserStart , signOutUserSuccess , signOutUserFailure} from '../redux/user/userSlice';
 import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
@@ -114,6 +114,23 @@ export default function Profile() {
     return <p>Loading...</p>; // or redirect to login page
   }
 
+  const handlesignout =  async () => {
+    try {
+      dispatch(signOutUserStart());
+      const res = await fetch('/api/auth/sign-out');
+      const data = await res.json();
+      if(data.success === false){
+        dispatch(signOutUserFailure(data.message));
+        return;
+      }
+      dispatch(signOutUserSuccess(data));
+      navigate('/sign-in');
+    } catch(error) {
+      dispatch(signOutUserFailure(error.message)); // Use error.message instead of data.message
+    }
+  }
+  
+
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center mt-9">Profile</h1>
@@ -179,7 +196,7 @@ export default function Profile() {
         <span onClick={handleDelete} className="text-red-700 cursor-pointer">
           Delete account
         </span>
-        <span className="text-red-700 cursor-pointer">Sign out</span>
+        <span onClick={handlesignout} className="text-red-700 cursor-pointer">Sign out</span>
       </div>
       {error && <p className="text-red-700 mt-5">{error}</p>}
       {updatesuccess && <p className="text-green-700 mt-5">User updated successfully</p>}
