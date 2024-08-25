@@ -9,9 +9,9 @@ exports.createlisting = async (req,res,next) =>{
             message:"listing created sucessfully",
             data:listing
         })
-        console.log(listing)
+        
     }
     catch(error){
-
+        next(error)
     }
 }

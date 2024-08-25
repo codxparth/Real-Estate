@@ -1,11 +1,5 @@
-import React from 'react';
-import { useState } from 'react';
-import {
-  getDownloadURL,
-  getStorage,
-  ref,
-  uploadBytesResumable,
-} from 'firebase/storage';
+import React, { useState } from 'react';
+import { getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
 import { app } from '../firebase';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -76,8 +70,7 @@ export default function CreateListing() {
       uploadTask.on(
         'state_changed',
         (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           console.log(`Upload is ${progress}% done`);
         },
         (error) => {
@@ -121,29 +114,59 @@ export default function CreateListing() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.imageUrls.length < 1)
-      return setError('You must upload at least one image');
-    if (formData.offer && +formData.regularPrice < +formData.discountPrice)
+    
+    if (!currentUser || !currentUser._id) {
+      setError('User is not authenticated');
+      return;
+    }
+  
+    if (!formData.description) {
+      return setError('Description is required');
+    }
+  
+    if (!formData.regularPrice) {
+      return setError('Regular price is required');
+    }
+  
+    if (formData.offer && !formData.discountPrice) {
+      return setError('Discount price is required when an offer is applied');
+    }
+  
+    if (formData.offer && +formData.regularPrice < +formData.discountPrice) {
       return setError('Discount price must be lower than regular price');
-
+    }
+  
+    const payload = {
+      ...formData,
+      userRef: currentUser._id,
+    };
+  
+    if (!formData.offer) {
+      delete payload.discountPrice;
+    }
+  
+    const formattedPayload = {
+      ...payload,
+      description: payload.description, // Ensure correct spelling
+      regularprice: payload.regularPrice, // Use correct field name
+      discountprice: payload.discountPrice || null, // Use correct field name
+    };
+  
     setLoading(true);
     setError(false);
-
+  
     try {
       const res = await fetch('/api/listing/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          userRef: currentUser._id,
-        }),
+        body: JSON.stringify(formattedPayload),
       });
-
+  
       const data = await res.json();
       setLoading(false);
-
+  
       if (!data.success) {
         setError(data.message);
       } else {
@@ -168,7 +191,7 @@ export default function CreateListing() {
             className="border p-3 rounded-lg"
             id="name"
             maxLength="62"
-            minLength="10"
+            minLength="5"
             required
             onChange={handleChange}
             value={formData.name}
